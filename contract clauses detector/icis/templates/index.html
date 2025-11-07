@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ICIS — Contract Workbench</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23000' d='M6 2h8l4 4v16a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zM14 2v4h4'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <!-- PDF export libs -->
+  <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+</head>
+<body class="gradient-surface">
+  <div class="app">
+    <!-- Sidebar -->
+    <aside class="aside">
+      <div class="brand">
+        <div class="logo" aria-hidden="true">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M6 2h8l4 4v16a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><path d="M14 2v4h4"/></svg>
+        </div>
+        <div>
+          <div class="sub">ICIS</div>
+          <h1>Contract Workbench</h1>
+          <div class="crumbs">Analyze → Results → Draft → History</div>
+        </div>
+      </div>
+
+      <nav class="nav" id="nav">
+        <button data-tab="analyze" class="active"><span class="dot"></span> Analyze</button>
+        <button data-tab="results"><span class="dot"></span> Results</button>
+        <button data-tab="draft"><span class="dot"></span> Draft</button>
+        <button data-tab="history"><span class="dot"></span> History</button>
+        <button data-tab="settings"><span class="dot"></span> Settings</button>
+        <button data-tab="help"><span class="dot"></span> Help</button>
+      </nav>
+
+      <div class="theme">
+        <span class="muted">Theme</span>
+        <input id="themeToggle" type="checkbox" class="switch" />
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <main id="main" class="grid">
+      <!-- Analyze -->
+      <section data-page="analyze" class="panel p24">
+        <h2>🔍 Analyze Contract</h2>
+        <div class="grid cols-2" style="margin-top:14px">
+          <div class="grid">
+            <label class="muted">Paste contract text</label>
+            <textarea id="contractText" placeholder="Paste contract text here..."></textarea>
+          </div>
+          <div class="grid">
+            <label class="muted">Or upload a .txt / .pdf / .docx (OCR for images/PDFs)</label>
+            <div id="drop" class="drop">Drag & drop file here</div>
+            <input id="file" class="input" type="file" accept=".png,.jpg,.jpeg,.tif,.tiff,.bmp,.gif,.pdf" />
+            <div class="row">
+              <select id="ocrLang" class="input">
+                <option value="eng" selected>eng</option>
+                <option value="eng+hin">eng+hin</option>
+              </select>
+              <button id="runFile" class="btn secondary">Analyze File (OCR)</button>
+            </div>
+            <div id="fileName" class="muted" style="min-height:18px"></div>
+          </div>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <button id="run" class="btn">Run Analysis</button>
+          <button id="copyIn" class="btn secondary">Copy Text</button>
+        </div>
+
+        <div class="grid cols-2" style="margin-top:16px">
+          <div class="card">Grounded explanations with rationales and source links.</div>
+          <div class="card">Turn findings into an editable addendum in one click.</div>
+        </div>
+      </section>
+
+      <!-- Results -->
+      <section data-page="results" class="panel p24 hidden">
+        <h2>✅ Findings</h2>
+        <div class="grid cols-2" style="margin-top:14px">
+          <div id="clauses" class="grid"></div>
+          <div class="grid">
+            <div class="card" id="clauseDetail">Select a clause to view details.</div>
+            <div class="row">
+              <button id="createDraft" class="btn">Create Draft</button>
+              <button data-jump="draft" class="btn secondary">Go to Draft</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Draft -->
+      <section data-page="draft" class="panel p24 hidden">
+        <h2>📝 Draft Editor</h2>
+        <textarea id="draftText" placeholder="Generate from results or start writing your addendum/redline…" style="margin-top:12px"></textarea>
+        <div class="row" style="margin-top:10px">
+          <button id="saveVersion" class="btn">Save Version</button>
+          <button id="exportPdf" class="btn secondary">Export PDF</button>
+        </div>
+        <div class="footer-tip">Tip: Keep defined terms consistent and cross-reference clause numbers.</div>
+      </section>
+
+      <!-- History -->
+      <section data-page="history" class="panel p24 hidden">
+        <h2>🕒 Version History</h2>
+        <div id="history" class="grid" style="margin-top:14px"></div>
+      </section>
+
+      <!-- Settings -->
+      <section data-page="settings" class="panel p24 hidden">
+        <h2>⚙️ System Settings</h2>
+        <div class="grid cols-2" style="margin-top:14px">
+          <div class="grid">
+            <label class="muted">Retrieval Strategy</label>
+            <select id="strategy" class="input">
+              <option>Hybrid (BM25 + Dense)</option>
+              <option>BM25 only</option>
+              <option>Dense only</option>
+            </select>
+            <div class="footer-tip">Balance precision/recall for clause lookups.</div>
+          </div>
+          <div class="grid">
+            <label class="muted">Export Format</label>
+            <select id="format" class="input">
+              <option>PDF</option>
+              <option>DOCX</option>
+              <option>Markdown</option>
+            </select>
+            <div class="footer-tip">Choose default export type.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Help -->
+      <section data-page="help" class="panel p24 hidden">
+        <h2>❓ How ICIS Works</h2>
+        <p class="muted">Upload or paste a contract → analyze risky clauses with rationales and sources → generate an editable draft or addendum → export/share.</p>
+      </section>
+    </main>
+  </div>
+  <div id="toast"></div>
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
